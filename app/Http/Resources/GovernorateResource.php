@@ -13,7 +13,6 @@ class GovernorateResource extends JsonResource
             'name' => $this->getTranslation('name', app()->getLocale()),
             'code' => $this->code,
 
-            // المدن المرتبطة
             'cities' => $this->whenLoaded('cities', function () {
                 return \App\Http\Resources\CityResource::collection($this->cities);
             }),

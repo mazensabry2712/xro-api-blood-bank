@@ -28,6 +28,8 @@ class Hospital extends Authenticatable
         'latitude',
         'region_id',
         'password',
+        'email_otp',
+        'email_otp_expires_at',
     ];
 
     protected $hidden = ['password'];

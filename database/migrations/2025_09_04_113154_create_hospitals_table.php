@@ -26,6 +26,8 @@ class CreateHospitalsTable extends Migration
             $table->decimal('latitude', 10, 7)->nullable();
             $table->unsignedInteger('region_id');
             $table->foreign('region_id')->references('id')->on('regions')->onDelete('restrict');
+            $table->string('email_otp')->nullable();
+            $table->timestamp('email_otp_expires_at')->nullable();
         });
     }
 
