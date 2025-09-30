@@ -7,9 +7,11 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Helpers;
 
 class AuthenticatedSessionController extends Controller
 {
+    use Helpers;
     /**
      * Handle an incoming authentication request.
      */
@@ -35,4 +37,5 @@ class AuthenticatedSessionController extends Controller
 
         return response()->noContent();
     }
+
 }

@@ -34,7 +34,30 @@ class Hospital extends Authenticatable
 
     protected $hidden = ['password'];
 
-    public $translatable = ['type', 'address'];
+    // 'type' is an enum column in the database — keep only address translatable
+    public $translatable = ['address'];
+
+    /**
+     * Ensure 'type' is always stored as a plain string in the enum column.
+     * Accepts: plain string, JSON string, or array/object like ['en' => 'governmental']
+     */
+    public function setTypeAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['type'] = $value['en'] ?? array_values($value)[0] ?? null;
+            return;
+        }
+
+        if (is_string($value)) {
+            $trim = trim($value);
+            if ((str_starts_with($trim, '{') || str_starts_with($trim, '[')) && $decoded = json_decode($trim, true)) {
+                $this->attributes['type'] = is_array($decoded) ? ($decoded['en'] ?? array_values($decoded)[0] ?? null) : $decoded;
+                return;
+            }
+        }
+
+        $this->attributes['type'] = $value;
+    }
 
     /** Relations */
     public function region()

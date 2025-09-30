@@ -515,6 +515,7 @@ class CitySeeder extends Seeder
 
         ];
 
-        DB::table('cities')->insert($cities);
+    // Use upsert so repeated seeding updates existing records instead of failing
+    DB::table('cities')->upsert($cities, ['id'], ['governorate_id', 'name_ar', 'name_en']);
     }
 }

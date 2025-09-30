@@ -28,6 +28,7 @@ class CreateHospitalsTable extends Migration
             $table->foreign('region_id')->references('id')->on('regions')->onDelete('restrict');
             $table->string('email_otp')->nullable();
             $table->timestamp('email_otp_expires_at')->nullable();
+            $table->string('password');
         });
     }
 

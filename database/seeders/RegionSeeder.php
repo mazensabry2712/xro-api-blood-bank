@@ -130,6 +130,7 @@ class RegionSeeder extends Seeder
             ['id' => 61, 'name' => 'سوهاج', 'city_id' => 383],
         ];
 
-        DB::table('regions')->insert($regions);
+    // Use upsert so repeated seeding updates existing records instead of failing
+    DB::table('regions')->upsert($regions, ['id'], ['name', 'city_id']);
     }
 }

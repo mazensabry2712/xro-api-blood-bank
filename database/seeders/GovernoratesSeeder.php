@@ -39,6 +39,7 @@ class GovernoratesSeeder extends Seeder
             ['id' => 27, 'name_ar' => 'سوهاج', 'name_en' => 'Sohag'],
         ];
 
-        DB::table('governorates')->insert($governorates);
+    // Use upsert to avoid duplicate primary key errors on repeated seeding
+    DB::table('governorates')->upsert($governorates, ['id'], ['name_ar', 'name_en']);
     }
 }

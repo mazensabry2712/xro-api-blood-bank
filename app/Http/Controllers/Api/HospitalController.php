@@ -133,6 +133,30 @@ class HospitalController extends Controller
 
     public function register(Request $request)
     {
+        // Normalize possible translated/object payloads for 'type' and 'address'
+        // Accepts: plain string, JSON string, or array/object like ['en' => '...']
+        $normalizeField = function ($value) {
+            if (is_array($value)) {
+                return $value['en'] ?? array_values($value)[0] ?? null;
+            }
+
+            if (is_string($value)) {
+                $trim = trim($value);
+                if ((str_starts_with($trim, '{') || str_starts_with($trim, '[')) && $decoded = json_decode($trim, true)) {
+                    return is_array($decoded) ? ($decoded['en'] ?? array_values($decoded)[0] ?? null) : $decoded;
+                }
+            }
+
+            return $value;
+        };
+
+        if ($request->has('type')) {
+            $request->merge(['type' => $normalizeField($request->input('type'))]);
+        }
+
+        if ($request->has('address')) {
+            $request->merge(['address' => $normalizeField($request->input('address'))]);
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'license_number' => 'required|string|unique:hospitals,license_number',

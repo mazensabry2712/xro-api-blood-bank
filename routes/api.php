@@ -1,32 +1,31 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\HospitalController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-// Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
-Route::middleware('auth:sanctum')->group(function () {
-
-
-});
-/* User Auth Routes */
+// Public user auth routes
 Route::post('/register', [RegisteredUserController::class, 'store']);
-Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:3,1');
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-    ->middleware('auth:sanctum');
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1');
 
-/* OTP User Verification Route */
+// OTP for users
+Route::post('/send-otp', [AuthenticatedSessionController::class, 'sendOtp'])->middleware('throttle:3,1');
 Route::post('/verify-otp', [AuthenticatedSessionController::class, 'verifyOtp']);
 
-/* Hospital Routes */
-Route::post('/hospital/login', [HospitalController::class, 'login']);
-Route::post('/hospital/logout', [HospitalController::class, 'logout']);
-Route::post('/hospital/register', [HospitalController::class, 'register']);
-/* Hospital OTP Verification Route */
-Route::post('/hospital/verify-otp', [HospitalController::class, 'verifyOtp']);
-Route::post('/hospital/send-otp', [HospitalController::class, 'sendOtp'])->middleware('throttle:3,1');
+// Hospital routes grouped under /hospital
+Route::prefix('hospital')->group(function () {
+    Route::post('/register', [HospitalController::class, 'register']);
+    Route::post('/login', [HospitalController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/send-otp', [HospitalController::class, 'sendOtp'])->middleware('throttle:3,1');
+    Route::post('/verify-otp', [HospitalController::class, 'verifyOtp']);
+    Route::post('/logout', [HospitalController::class, 'logout'])->middleware('auth:sanctum');
+});
+
+// Protected routes (require user auth)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
+    // add other protected user endpoints here
+});
