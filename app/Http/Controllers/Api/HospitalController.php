@@ -10,122 +10,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
+use App\Mail\ResetPassword as MailResetPassword;
 use App\Mail\SendOtpMail;
+use Illuminate\Auth\Notifications\ResetPassword;
 
 class HospitalController extends Controller
 {
     use \App\Traits\Helpers;
-
-    /**
-     * Summary of login
-     */
-    public function login(Request $request)
-    {
-        $request->validate([
-            'license_number' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        $hospital = Hospital::where('license_number', $request->license_number)->first();
-
-        if (! $hospital) {
-            return $this->errorResponse(null, 'Invalid credentials');
-        }
-
-        if (! Hash::check($request->password, $hospital->password)) {
-            return $this->errorResponse(null, 'Invalid credentials');
-        }
-
-        $token = $hospital->createToken('HospitalToken')->plainTextToken;
-
-        return $this->successResponse([
-            'hospital' => $hospital,
-            'token' => $token,
-        ], 'Login successful');
-    }
-    /**
-     * Send OTP to hospital
-     */
-    public function sendOtp(Request $request)
-    {
-        $request->validate([
-            'license_number' => 'required|string',
-        ]);
-
-        $hospital = Hospital::where('license_number', $request->license_number)->first();
-
-        if (! $hospital) {
-            return $this->errorResponse(null, 'Hospital not found');
-        }
-
-        // توليد OTP
-        $otpCode = rand(100000, 999999);
-
-        $hospital->update([
-            'email_otp' => $otpCode,
-            'email_otp_expires_at' => Carbon::now()->addMinutes(5),
-        ]);
-
-        // هنا تقدر تبعته Email أو SMS
-        Mail::to($hospital->email)->send(new SendOtpMail($otpCode));
-
-        return $this->successResponse(null, 'OTP sent successfully');
-    }
-
-    /**
-     * Verify OTP and login
-     */
-    public function verifyOtp(Request $request)
-    {
-        $request->validate([
-            'license_number' => 'required|string',
-            'email_otp' => 'required|string',
-        ]);
-
-        $hospital = Hospital::where('license_number', $request->license_number)->first();
-
-        if (! $hospital) {
-            return $this->errorResponse(null, 'Hospital not found');
-        }
-
-        if (
-            $hospital->email_otp !== $request->email_otp ||
-            !$hospital->email_otp_expires_at ||
-            $hospital->email_otp_expires_at->isPast()
-        ) {
-            return $this->errorResponse(null, 'Invalid or expired OTP');
-        }
-
-        // امسح الـ OTP بعد الاستخدام
-        $hospital->update([
-            'email_otp' => null,
-            'email_otp_expires_at' => null,
-        ]);
-
-        // اصنع توكن
-        $token = $hospital->createToken('HospitalToken')->plainTextToken;
-
-        return $this->successResponse([
-            'hospital' => $hospital,
-            'token' => $token,
-        ], 'Login successful');
-    }
-
-    /**
-     * Summary of logout
-     */
-    public function logout(Request $request)
-    {
-        $request->user()->tokens()->delete();
-
-        return $this->successResponse(null, 'Logged out successfully');
-        // return self::successResponse(null, 'Logged out successfully');
-        // return parent::successResponse(null, 'Logged out successfully');
-        // return static::successResponse(null, 'Logged out successfully');
-    }
-
-
-
 
     /**
      * Register a new hospital
@@ -190,8 +81,167 @@ class HospitalController extends Controller
         $token = $hospital->createToken('HospitalToken')->plainTextToken;
 
         return $this->successResponse([
-            'hospital' => $hospital,
             'token' => $token,
         ], 'Hospital registered successfully');
+    }
+    /**
+     * Summary of login
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'license_number' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $hospital = Hospital::where('license_number', $request->license_number)->first();
+
+        if (! $hospital) {
+            return $this->errorResponse(null, 'Invalid credentials');
+        }
+
+        if (! Hash::check($request->password, $hospital->password)) {
+            return $this->errorResponse(null, 'Invalid credentials');
+        }
+
+        $token = $hospital->createToken('HospitalToken')->plainTextToken;
+
+        return $this->successResponse([
+            'token' => $token,
+        ], 'Login successful');
+    }
+    /**
+     * Reset password for hospital
+     */
+    // public function resetPassword(Request $request)
+    // {
+    //     $request->validate([
+    //         'license_number' => 'required|string',
+    //     ]);
+
+    //     $hospital = Hospital::where('license_number', $request->license_number)->first();
+
+    //     if (! $hospital) {
+    //         return $this->errorResponse(null, 'Hospital not found');
+    //     }
+
+    //     // توليد OTP
+    //     $otpCode = rand(100000, 999999);
+
+    //     $hospital->update([
+    //         'email_otp' => $otpCode,
+    //         'email_otp_expires_at' => Carbon::now()->addMinutes(5),
+    //     ]);
+
+    //     // هنا تقدر تبعته Email أو SMS
+    //     Mail::to($hospital->email)->send(new MailResetPassword($otpCode));
+
+    //     return $this->successResponse(null, 'OTP sent successfully');
+    // }
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'license_number' => 'required|string',
+        ]);
+
+        $hospital = Hospital::where('license_number', $request->license_number)->first();
+
+        if (! $hospital) {
+            return $this->errorResponse(null, 'Hospital not found');
+        }
+
+        // توليد OTP آمن
+        $otpCode = random_int(100000, 999999);
+
+        // تحديث بيانات المستشفى
+        $hospital->update([
+            'email_otp' => Hash::make($otpCode),
+            'email_otp_expires_at' => Carbon::now()->addMinutes(5),
+            'otp_attempts' => 3,
+        ]);
+
+        // إرسال OTP (Mail أو Notification)
+        Mail::to($hospital->email)->send(new MailResetPassword($otpCode));
+
+        return $this->successResponse(null, 'OTP sent successfully');
+    }
+
+
+    /**
+     * Verify OTP and login
+     */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'license_number' => 'required|string',
+            'email_otp' => 'required|string',
+        ]);
+
+        $hospital = Hospital::where('license_number', $request->license_number)->first();
+
+        if (! $hospital) {
+            return $this->errorResponse(null, 'Hospital not found');
+        }
+
+        if (
+            $hospital->email_otp !== $request->email_otp ||
+            !$hospital->email_otp_expires_at ||
+            $hospital->email_otp_expires_at->isPast()
+        ) {
+            return $this->errorResponse(null, 'Invalid or expired OTP');
+        }
+
+        // امسح الـ OTP بعد الاستخدام
+        $hospital->update([
+            'email_otp' => null,
+            'email_otp_expires_at' => null,
+        ]);
+
+        // اصنع توكن
+        $token = $hospital->createToken('HospitalToken')->plainTextToken;
+
+        return $this->successResponse([
+            'hospital' => $hospital,
+            'token' => $token,
+        ], 'Login successful');
+    }
+
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+            'verification_code' => 'required|string',
+        ]);
+
+        $hospital = $request->user();
+
+        if (! $hospital) {
+            return $this->errorResponse(null, 'Hospital not found');
+        }
+
+        if ($hospital->verification_code !== $request->verification_code) {
+            return $this->errorResponse(null, 'Invalid verification code');
+        }
+
+        $hospital->password = Hash::make($request->password);
+        $hospital->save();
+
+        return $this->successResponse(null, 'Password updated successfully');
+    }
+
+
+    /**
+     * Summary of logout
+     */
+    public function logout(Request $request)
+    {
+
+        $request->user()->currentAccessToken()->delete();
+        return $this->successResponse(null, 'Logged out successfully');
+
+        // return self::successResponse(null, 'Logged out successfully');
+        // return parent::successResponse(null, 'Logged out successfully');
+        // return static::successResponse(null, 'Logged out successfully');
     }
 }
