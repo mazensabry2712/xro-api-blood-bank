@@ -18,6 +18,7 @@ class CreateBloodRequestsTable extends Migration {
 			$table->string('longitude');
 			$table->string('latitude');
 			$table->enum('status', array('urgent', 'medium', 'low'))->nullable();
+            $table->enum('type_status', array('inactive', 'active'))->default('inactive');
 		});
 	}
 

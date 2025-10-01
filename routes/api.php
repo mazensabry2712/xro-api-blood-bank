@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\HospitalController;
+use App\Http\Controllers\Api\BloodRequestController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
@@ -30,4 +31,7 @@ Route::prefix("/v1")->group(function () {
         Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
         // add other protected user endpoints here
     });
+
+    // Blood request routes (public for now, can be protected later)
+    Route::post('/blood-requests', [BloodRequestController::class, 'store']);
 });

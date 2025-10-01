@@ -26,9 +26,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-       $this->call(GovernoratesSeeder::class);
-       $this->call(CitySeeder::class);
-       $this->call(RegionSeeder::class);
-       $this->call(HospitalSeeder::class);
+        $this->call(GovernoratesSeeder::class);
+        $this->call(CitySeeder::class);
+        $this->call(RegionSeeder::class);
+        $this->call(HospitalSeeder::class);
+        $this->call(BloodTypeSeeder::class);
     }
 }
