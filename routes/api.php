@@ -33,5 +33,9 @@ Route::prefix("/v1")->group(function () {
     });
 
     // Blood request routes (public for now, can be protected later)
-    Route::post('/blood-requests', [BloodRequestController::class, 'store']);
+    Route::middleware('auth:hospital,client')->post('/blood-requests', [BloodRequestController::class, 'store']);
+
+    // Routes to get blood requests for authenticated hospitals and clients
+    Route::middleware('auth:hospital')->get('/hospital/blood-requests', [BloodRequestController::class, 'myHospitalRequests']);
+    Route::middleware('auth:client')->get('/client/blood-requests', [BloodRequestController::class, 'myClientRequests']);
 });

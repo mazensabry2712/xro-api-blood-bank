@@ -25,4 +25,28 @@ class BloodRequestController extends Controller
             'blood_request' => $bloodRequest,
         ], 'Blood request created successfully');
     }
+
+    public function myHospitalRequests(Request $request)
+    {
+        $user = $request->user("hospital");
+        $userId = $user->user_id;
+
+        $bloodRequests = BloodRequest::where('user_id', $userId)->get();
+
+        return $this->successResponse([
+            'blood_requests' => $bloodRequests,
+        ], 'Blood requests retrieved successfully');
+    }
+
+    public function myClientRequests(Request $request)
+    {
+        $user = $request->user("client");
+        $userId = $user->user_id;
+
+        $bloodRequests = BloodRequest::where('user_id', $userId)->get();
+
+        return $this->successResponse([
+            'blood_requests' => $bloodRequests,
+        ], 'Blood requests retrieved successfully');
+    }
 }
